@@ -24,10 +24,10 @@
 #define MSG "This is alice, how are you?"
 #define RDMAMSGR "RDMA read operation"
 #define RDMAMSGW "RDMA write operation"
-#define MSG_SIZE (strlen(MSG) + 1)
+#define MSG_SIZE (strlen(MSG) + 20)
 #define PM_PATH "/pmem/rdma/serverDB"
-// 12M的内存
-// #define MSG_SIZE 12*1000*1000
+// 300M的内存
+#define PM_SIZE 300*1000*1000
 
 
 #define ERROR(fmt, args...)                                                    \
@@ -303,11 +303,11 @@ static int resource_create(struct resource *res) {
     assert(res->cq != NULL);
 
     // size = MSG_SIZE;
-    // res->pmemaddr = (char*)calloc(1, size);
+    // res->pmemaddr = (char*)calloc(1, PM_SIZE);
     // assert(res->pmemaddr != NULL);
 
     /* Create a pmem file and memory map it. */
-	if ((res->pmemaddr = pmem_map_file(PM_PATH, MSG_SIZE, 
+	if ((res->pmemaddr = pmem_map_file(PM_PATH, PM_SIZE, 
 			PMEM_FILE_CREATE, 0666, &(res->pmemsize), 
 			&(res->is_pmem))) == NULL) {
 		perror("pmem_map_file");
@@ -331,7 +331,7 @@ static int resource_create(struct resource *res) {
 
     mr_flags = IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE;
     // res->mr = ibv_reg_mr(res->pd, res->buf, size, mr_flags);
-    res->mr = ibv_reg_mr(res->pd, res->pmemaddr, MSG_SIZE, mr_flags);
+    res->mr = ibv_reg_mr(res->pd, res->pmemaddr, PM_SIZE, mr_flags);
     assert(res->mr != NULL);
 
     INFO("MR已经注册, 地址为%p, local key为: %x, remote key为: 0x%x, flags为: 0x%x\n",
@@ -663,18 +663,17 @@ int main(int argc, char* argv[]) {
 
     connect_qp(&res);
 
-    post_send(&res, IBV_WR_SEND);
-
-    poll_completion(&res);
+    // post_send(&res, IBV_WR_SEND);
+    // poll_completion(&res);
 
     // strcpy(res.buf, RDMAMSGR);
-    strcpy(res.pmemaddr, RDMAMSGR);
+    // strcpy(res.pmemaddr, RDMAMSGR);
     // INFO("消息是: %s\n", res.buf);
     
-    sock_sync_data(res.sock, 1, "R", &temp_char);
+    // sock_sync_data(res.sock, 1, "R", &temp_char);
 
     sock_sync_data(res.sock, 1, "W", &temp_char);
-    INFO("服务器的数据是: %s\n", res.pmemaddr);
+    // INFO("服务器的数据是: %s\n", res.pmemaddr);
     // INFO("服务器的数据是: %s\n", res.buf);
     
     resource_destroy(&res);

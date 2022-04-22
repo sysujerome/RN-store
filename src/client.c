@@ -24,7 +24,7 @@
 #define MSG "This is alice, how are you?"
 #define RDMAMSGR "RDMA read operation"
 #define RDMAMSGW "RDMA write operation"
-#define MSG_SIZE (strlen(MSG) + 1)
+#define MSG_SIZE (strlen(MSG) + 20)
 
 
 #define ERROR(fmt, args...)                                                    \
@@ -162,7 +162,7 @@ static int poll_completion(struct resource *res) {
         ERROR("Completion wasn't found in the CQ after timeout\n");
         goto die;
     } else {
-        INFO("Completion was found in CQ with status 0x%x\n", wc.status);
+        // INFO("Completion was found in CQ with status 0x%x\n", wc.status);
     }
 
     if (wc.status != IBV_WC_SUCCESS) {
@@ -233,57 +233,99 @@ static int load_data(struct resource *res) {
     if (fp == NULL) exit(EXIT_FAILURE);
 
     char line[256];
-    char key[256];
+    // char key[256];
     size_t len = 0;
     size_t total_len = 0;
-    int i = 0, j = 0, count = 0;
+    int i = 0, j = 0, count = 0, number = 0;
+    clock_t start, end;
+    double cpu_time_used;
+    
+    
+    // printf()
+
+    char **keys;
+    const int key_count = 5000000;
+    keys = (char**)malloc(key_count * sizeof(char*));
+
     while (fgets(line, sizeof(line), fp)) {
         // size_t len = 0;
+        keys[count] = (char*)malloc(30);
         for (i = 0; i < strlen(line)-1; i++) { 
             if (line[i] == ' ') {
                 j = 0;
                 continue;
             }
             if (line[i] == '\n') break;
-            key[j++] = line[i];
+            keys[count][j++] = line[i];
         }
-        key[j] = '\0';
-        printf("%s", line);
-        printf("len of \"%s\" is %ld\n", key, strlen(key));
-        len = strlen(key)+1;
-        key[len-1] = '\t';
+        keys[count][j] = '\0';
         count++;
-        if (count > 100) break;
+        if (count >= 5000000) break;
+    }
+    count = 0;
+    start = clock();
+
+    // char send_data[256*42 + 30];
+    int buf_index = 0;
+    for (i = 0; i < 5000000; i++) {
+        // printf("%s", line);
+        // printf("key_%d : len of \"%s\" is %ld\n", number++, keys[i], strlen(keys[i]));
+        len = strlen(keys[i])+1;
+        keys[i][len-1] = '\t';
+        strncpy(res->buf+buf_index, keys[i], len);
+        buf_index += len;
+        count++;
+        if (count % 1000000 == 0) {
+            end = clock();
+            cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+            printf("%d keys used %f seconds\n", count, cpu_time_used);
+        }
         
-    
-        struct ibv_send_wr sr;
-        struct ibv_sge sge;
-        struct ibv_send_wr *bad_wr = NULL;
+        if (buf_index > 256*1024) {
+            // res->buf[buf_index++] = '\0';
+            // printf("write %d bits to server.\n%s\n", buf_index, res->buf);
+            struct ibv_send_wr sr;
+            struct ibv_sge sge;
+            struct ibv_send_wr *bad_wr = NULL;
 
-        bzero(&sge, sizeof(sge));
+            bzero(&sge, sizeof(sge));
 
-        sge.addr = (uintptr_t)key;
-        sge.length = strlen(key);
-        sge.lkey = res->mr->lkey;
+            sge.addr = (uintptr_t)res->buf;
+            sge.length = buf_index;
+            sge.lkey = res->mr->lkey;
 
-        // 准备发送请求 send work request 
-        bzero(&sr, sizeof(sr));
-        sr.next = NULL;
-        sr.wr_id = 0;
-        sr.sg_list = &sge;
-        sr.num_sge = 1;
-        sr.send_flags = IBV_EXP_SEND_SIGNALED;
+            // 准备发送请求 send work request 
+            bzero(&sr, sizeof(sr));
+            sr.next = NULL;
+            sr.wr_id = 0;
+            sr.sg_list = &sge;
+            sr.num_sge = 1;
+            sr.opcode = IBV_WR_RDMA_WRITE;
+            sr.send_flags = IBV_EXP_SEND_SIGNALED;
 
-        sr.wr.rdma.remote_addr = res->remote_props.addr;
-        sr.wr.rdma.rkey = res->remote_props.rkey;
+            sr.wr.rdma.remote_addr = res->remote_props.addr+total_len;
+            sr.wr.rdma.rkey = res->remote_props.rkey;
 
 
-        CHECK(ibv_post_send(res->qp, &sr, &bad_wr));
-        total_len += len;
-        break;
+            CHECK(ibv_post_send(res->qp, &sr, &bad_wr));
+            total_len += buf_index;
+            
+            poll_completion(res);
+            buf_index = 0;
+        }
+        
     }
 
-
+    end = clock();
+    cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+    printf("%d keys used %f seconds\n", count, cpu_time_used);
+    
+    // if (key) free(key);
+    for (i = 0 ; i < key_count; i++) {
+        free(keys[i]);
+    }
+    free(keys);
+    fclose(fp);
     return 0;
 }
 
@@ -378,7 +420,7 @@ static int resource_create(struct resource *res) {
     res->cq = ibv_create_cq(res->ib_ctx, cq_size, NULL, NULL, 0);
     assert(res->cq != NULL);
 
-    size = MSG_SIZE;
+    size = 256*1024+30;
     res->buf = (char*)calloc(1, size);
     assert(res->buf != NULL);
 
@@ -706,22 +748,23 @@ int main(int argc, char* argv[]) {
 
     connect_qp(&res);
 
-    poll_completion(&res);
-    INFO("消息是: %s\n", res.buf);
+    // poll_completion(&res);
+    // INFO("消息是: %s\n", res.buf);
 
-    sock_sync_data(res.sock, 1, "R", &temp_char);
+    // sock_sync_data(res.sock, 1, "W", &temp_char);
 
-    post_send(&res, IBV_WR_RDMA_READ);
-    poll_completion(&res);
-    INFO("Contents of server's buffer: %s\n", res.buf);
-    // now we replace what's in the server's buffer
-    strcpy(res.buf, RDMAMSGW);
-    INFO("Now replacing it with: %s\n", res.buf);
-    post_send(&res, IBV_WR_RDMA_WRITE);
-    poll_completion(&res);
+    // post_send(&res, IBV_WR_RDMA_READ);
+    // poll_completion(&res);
+    // INFO("Contents of server's buffer: %s\n", res.buf);
+    // // now we replace what's in the server's buffer
+    // strcpy(res.buf, RDMAMSGW);
+    // INFO("Now replacing it with: %s\n", res.buf);
+    // // post_send(&res, IBV_WR_RDMA_WRITE);
+
+    load_data(&res);
 
     sock_sync_data(res.sock, 1, "W", &temp_char);
-    INFO("服务器的数据是: %s\n", res.buf);
+    // INFO("服务器的数据是: %s\n", res.buf);
     
     resource_destroy(&res);
     return 0;

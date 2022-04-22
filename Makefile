@@ -1,10 +1,10 @@
 
 all: clean server client
 
-server: server.c
+server: ./src/server.c
 	gcc -g -o $@ -Wall $^ -libverbs -lpmem
 
-client : client.c
+client : ./src/client.c
 	gcc -g -o $@ -Wall $^ -libverbs -lpmem
 clean:
 	rm -f server
