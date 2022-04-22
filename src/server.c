@@ -302,25 +302,25 @@ static int resource_create(struct resource *res) {
     res->cq = ibv_create_cq(res->ib_ctx, cq_size, NULL, NULL, 0);
     assert(res->cq != NULL);
 
-    // size = MSG_SIZE;
-    // res->pmemaddr = (char*)calloc(1, PM_SIZE);
-    // assert(res->pmemaddr != NULL);
+    size = MSG_SIZE;
+    res->pmemaddr = (char*)calloc(1, PM_SIZE);
+    assert(res->pmemaddr != NULL);
 
     /* Create a pmem file and memory map it. */
-	if ((res->pmemaddr = pmem_map_file(PM_PATH, PM_SIZE, 
-			PMEM_FILE_CREATE, 0666, &(res->pmemsize), 
-			&(res->is_pmem))) == NULL) {
-		perror("pmem_map_file");
-		exit(1);
-	}
+	// if ((res->pmemaddr = pmem_map_file(PM_PATH, PM_SIZE, 
+	// 		PMEM_FILE_CREATE, 0666, &(res->pmemsize), 
+	// 		&(res->is_pmem))) == NULL) {
+	// 	perror("pmem_map_file");
+	// 	exit(1);
+	// }
 
-    if (!res->is_pmem) {
-        printf("Not pmem!\n");
-        pmem_unmap(res->pmemaddr, res->pmemsize);
-        exit(EXIT_FAILURE);
-    } else {
-        printf("Mapped success, pmemsize : %ld\n", res->pmemsize);
-    }
+    // if (!res->is_pmem) {
+    //     printf("Not pmem!\n");
+    //     pmem_unmap(res->pmemaddr, res->pmemsize);
+    //     exit(EXIT_FAILURE);
+    // } else {
+    //     printf("Mapped success, pmemsize : %ld\n", res->pmemsize);
+    // }
 
 
     strcpy(res->pmemaddr, MSG);
@@ -497,12 +497,12 @@ static int connect_qp(struct resource *res) {
 static int resource_destroy(struct resource *res) {
     ibv_destroy_qp(res->qp);
     ibv_dereg_mr(res->mr);
-    if (res->is_pmem) {
-        pmem_unmap(res->pmemaddr, res->pmemsize);
-    } else {
-        pmem_msync(res->pmemaddr, res->pmemsize);
-    }
-    // free(res->pmemaddr);
+    // if (res->is_pmem) {
+    //     pmem_unmap(res->pmemaddr, res->pmemsize);
+    // } else {
+    //     pmem_msync(res->pmemaddr, res->pmemsize);
+    // }
+    free(res->pmemaddr);
     
     // free(res->buf);
     ibv_destroy_cq(res->cq);

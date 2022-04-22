@@ -1,11 +1,13 @@
 
 all: clean server client
 
-server: ./src/server.c
-	gcc -g -o $@ -Wall $^ -libverbs -lpmem
+GLAGS = -g -Wall -std=gnu99
 
-client : ./src/client.c
-	gcc -g -o $@ -Wall $^ -libverbs -lpmem
+server: ./src/server.c
+	gcc -o $@ $(GLAGS)  $^ -libverbs -lpmem
+
+client : ./src/client.c ./src/crc16.c
+	gcc -o $@ $(GLAGS)  $^ -libverbs -lpmem
 clean:
 	rm -f server
 
