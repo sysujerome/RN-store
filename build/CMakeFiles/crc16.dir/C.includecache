@@ -1,0 +1,22 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+../include/checksum.h
+stddef.h
+-
+stdint.h
+-
+
+/home/pjl/lab/RN-store/src/crc16.c
+stdbool.h
+-
+stdlib.h
+-
+checksum.h
+/home/pjl/lab/RN-store/src/checksum.h
+

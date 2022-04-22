@@ -1,0 +1,2 @@
+/usr/bin/ar qc librdma1.a  CMakeFiles/rdma1.dir/src/rdma.c.o
+/usr/bin/ranlib librdma1.a

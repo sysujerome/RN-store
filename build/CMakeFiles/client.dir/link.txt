@@ -1,0 +1,1 @@
+/usr/bin/cc   -g -Wall -lpmem -libverbs CMakeFiles/client.dir/src/client.c.o  -o client  libcrc16.a librdma.a 

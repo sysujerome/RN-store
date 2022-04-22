@@ -1,0 +1,1 @@
+/usr/bin/cc   -g -Wall -lpmem -libverbs CMakeFiles/server.dir/src/server.c.o  -o server   -L/home/pjl/lab/RN-store/include 
