@@ -10,7 +10,6 @@
 #define RDMAMSGR "RDMA read operation"
 #define RDMAMSGW "RDMA write operation"
 #define MSG_SIZE (strlen(MSG) + 20)
-#define PM_PATH "/pmem/rdma/serverDB"
 // 300M的内存
 #define PM_SIZE 300*1000*1000
 
@@ -40,45 +39,6 @@ static inline uint64_t ntohll(uint64_t x) { return x; }
 #else
 #error __BYTE_ORDER is neither __LITTLE_ENDIAN nor __BIG_ENDIAN
 #endif
-
-// structure to exchange data which is needed to connect the QPs
-// 连接QP时, 需要交换的数据
-struct cm_con_data_t {
-    uint64_t addr;   // buffer address
-    uint32_t rkey;   // remote key
-    uint32_t qp_num; // QP number
-    uint16_t lid;    // LID of the IB port
-    uint8_t gid[16]; // GID
-} __attribute__((packed));
-
-// 测试相关参数的数据结构
-struct config_t {
-    const char *dev_name; // IB device name
-    char *server_name;    // server hostname
-    uint32_t tcp_port;    // server TCP port
-    int ib_port;          // local IB port to work with
-    int gid_idx;          // GID index to use
-
-};
-
-// 本进程的相关资源
-struct resource
-{
-    struct ibv_device_attr device_attr;
-    struct ibv_port_attr port_attr;
-    struct cm_con_data_t remote_props;
-    struct ibv_context *ib_ctx;
-    struct ibv_pd *pd;
-    struct ibv_cq *cq;
-    struct ibv_qp *qp;
-    struct ibv_mr *mr;
-    // char *buf;
-    char *pmemaddr; // pmem映射地址
-    size_t pmemsize;
-    int is_pmem;
-
-    int sock;
-};
 
 // 自身的配置文件
 struct config_t config = {.dev_name = NULL,

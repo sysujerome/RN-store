@@ -6,5 +6,5 @@ C_FLAGS =   -std=gnu11
 
 C_DEFINES = 
 
-C_INCLUDES = 
+C_INCLUDES = -I/home/pjl/lab/RN-store/include 
 

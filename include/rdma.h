@@ -13,7 +13,7 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
-
+#include <libpmem.h>
 
 // #define MAX_POLL_CQ_TIMEOUT 2000 // ms
 // #define MSG_SIZE 100
@@ -25,7 +25,8 @@
 #define RDMAMSGR "RDMA read operation"
 #define RDMAMSGW "RDMA write operation"
 #define MSG_SIZE (strlen(MSG) + 20)
-
+#define PM_SIZE 300*1024*1024
+#define PM_PATH "/pmem/rdma/serverDB"
 
 
 
@@ -60,6 +61,8 @@ struct resource
     struct ibv_qp *qp;
     struct ibv_mr *mr;
     char *buf;
+    int pmem_size;
+    int is_pmem;
 
     int sock;
 };

@@ -96,7 +96,7 @@ clean: CMakeFiles/crc16.dir/clean
 # Target rules for target CMakeFiles/server.dir
 
 # All Build rule for target.
-CMakeFiles/server.dir/all:
+CMakeFiles/server.dir/all: CMakeFiles/rdma1.dir/all
 	$(MAKE) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/depend
 	$(MAKE) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/pjl/lab/RN-store/build/CMakeFiles --progress-num=9,10 "Built target server"
@@ -104,7 +104,7 @@ CMakeFiles/server.dir/all:
 
 # Build rule for subdir invocation for target.
 CMakeFiles/server.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/pjl/lab/RN-store/build/CMakeFiles 2
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/pjl/lab/RN-store/build/CMakeFiles 4
 	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/server.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/pjl/lab/RN-store/build/CMakeFiles 0
 .PHONY : CMakeFiles/server.dir/rule
