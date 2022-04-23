@@ -61,6 +61,8 @@ int main(int argc, char* argv[]) {
     resource_init(&res);
 
     resource_create(&res, &config);
+    
+    printf("资源创建成功, 开始连接...\n");
 
     connect_qp(&res, &config);
 
@@ -77,7 +79,7 @@ int main(int argc, char* argv[]) {
     // INFO("服务器的数据是: %s\n", res.pmemaddr);
     // INFO("服务器的数据是: %s\n", res.buf);
     
-    resource_destroy(&res);
+    resource_destroy(&res, &config);
     return 0;
 }
 

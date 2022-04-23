@@ -83,8 +83,8 @@ static int load_data(struct resource *resources) {
             printf("%d keys used %f seconds\n", count, cpu_time_used);
         }
         
-        // res->buf[buf_index++] = '\0';
-        // printf("write %d bits to server.\n%s\n", buf_index, res->buf);
+        // resources[server_id].buf[len+1] = '\0';
+        // printf("key_%d : write %d bits to server.\n%s\n", i, buf_index, resources[server_id].buf);
 
         bzero(&sge, sizeof(sge));
 
@@ -158,6 +158,8 @@ int main(int argc, char* argv[]) {
 
         resource_create(&resources[i], &configs[i]);
 
+        printf("资源创建成功, 开始连接...\n");
+
         connect_qp(&resources[i], &configs[i]);
     }
 
@@ -180,7 +182,7 @@ int main(int argc, char* argv[]) {
     sock_sync_data(resources[1].sock, 1, "W", &temp_char);
     // INFO("服务器的数据是: %s\n", res.buf);
     
-    for (int i = 0; i < SERVER_COUNT; i++) resource_destroy(&resources[i]);
+    for (int i = 0; i < SERVER_COUNT; i++) resource_destroy(&resources[i], &configs[i]);
     return 0;
 }
 

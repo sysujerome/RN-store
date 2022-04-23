@@ -99,7 +99,7 @@ int modify_qp_to_rts(struct ibv_qp *qp);
 
 int connect_qp(struct resource *res, struct config_t *config);
 
-int resource_destroy(struct resource *res);
+int resource_destroy(struct resource *res, struct config_t *config);
 
 
 void print_usage(const char *progname);

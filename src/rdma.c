@@ -276,32 +276,38 @@ int resource_create(struct resource *res, struct config_t *config) {
     res->pd = ibv_alloc_pd(res->ib_ctx);
     assert(res->pd != NULL);
 
+    // a CQ with one entry
+    cq_size = 1;
+    res->cq = ibv_create_cq(res->ib_ctx, cq_size, NULL, NULL, 0);
+    assert(res->cq != NULL);
+
+
     if (config->server_name) {
         // 客户端
-        size = MSG_SIZE;
+        size = PM_SIZE;
         res->buf = (char*)calloc(1, size);
         assert(res->buf != NULL);
     } else {
         // 服务器
-        // size = PM_SIZE;
-        // if ((res->buf = pmem_map_file(PM_PATH, PM_SIZE, 
-        // 		PMEM_FILE_CREATE, 0666, &(res->pmem_size), 
-        // 		&(res->is_pmem))) == NULL) {
-        // 	perror("pmem_map_file");
-        // 	exit(1);
-        // }
-
-        // if (!res->is_pmem) {
-        //     printf("Not pmem!\n");
-        //     pmem_unmap(res->buf, res->pmem_size);
-        //     exit(EXIT_FAILURE);
-        // } else {
-        //     printf("Mapped success, pmem_size : %ld\n", res->pmem_size);
-        // }
-
         size = PM_SIZE;
-        res->buf = (char*)calloc(1, size);
-        assert(res->buf != NULL);
+        if ((res->buf = pmem_map_file(PM_PATH, PM_SIZE, 
+        		PMEM_FILE_CREATE, 0666, &(res->pmem_size), 
+        		&(res->is_pmem))) == NULL) {
+        	perror("pmem_map_file");
+        	exit(1);
+        }
+
+        if (!res->is_pmem) {
+            printf("Not pmem!\n");
+            pmem_unmap(res->buf, res->pmem_size);
+            exit(EXIT_FAILURE);
+        } else {
+            printf("Mapped success, pmem_size : %ld\n", res->pmem_size);
+        }
+
+        // size = PM_SIZE;
+        // res->buf = (char*)calloc(1, size);
+        // assert(res->buf != NULL);
     }
 
     mr_flags = IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE;
@@ -464,10 +470,20 @@ int connect_qp(struct resource *res, struct config_t *config) {
     return 0;
 }
 
-int resource_destroy(struct resource *res) {
+int resource_destroy(struct resource *res, struct config_t *config) {
     ibv_destroy_qp(res->qp);
     ibv_dereg_mr(res->mr);
-    free(res->buf);
+    // free(res->buf);
+
+    if (config->server_name) {
+        free(res->buf);
+    } else {
+        if (res->is_pmem) {
+            pmem_unmap(res->buf, res->pmem_size);
+        } else {
+            pmem_msync(res->buf, res->pmem_size);
+        }
+    }
     ibv_destroy_cq(res->cq);
     ibv_dealloc_pd(res->pd);
     ibv_close_device(res->ib_ctx);
